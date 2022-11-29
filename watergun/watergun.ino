@@ -35,3 +35,17 @@ void rotateISR() {
     steps = 0;
   }
 }
+
+void reset() {
+  if (pos < 0) {
+    while (pos < 0) {
+      myStepper.step(1);
+      pos++;
+    }
+  } else {
+    while (pos > 0) {
+      myStepper.step(-1);
+      pos--;
+    }
+  }
+}
