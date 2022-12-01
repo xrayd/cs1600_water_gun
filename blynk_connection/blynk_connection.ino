@@ -57,6 +57,13 @@ void loop()
 {
   // Blynk recommends avoiding the delay() function here
   // TODO: connect this code with the rest of our implementation!
+
+  // INSTRUCTIONS TO USE
+  // Upload this code to arduino and check the serial monitor to ensure it connects to Blynk
+  // Should see a message saying Blynk is connected after the Arduino connects to Brown-Guest WiFi
+  // On the Blynk app (Ray's account), you'll see that the Arduino is online and you can press buttons; uptime should be shown
+  // When you press the button, check the serial monitor to ensure it registered the button press
+
   Blynk.run();
   timer.run();
   if (detect_rise()){
