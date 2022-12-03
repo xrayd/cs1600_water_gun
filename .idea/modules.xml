@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/cs1600_water_gun.iml" filepath="$PROJECT_DIR$/.idea/cs1600_water_gun.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/cs1600_water_gun2.iml" filepath="$PROJECT_DIR$/.idea/cs1600_water_gun2.iml" />
     </modules>
   </component>
 </project>
