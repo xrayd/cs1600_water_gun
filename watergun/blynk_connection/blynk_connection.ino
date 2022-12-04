@@ -3,11 +3,26 @@
 #define BLYNK_DEVICE_NAME "Water Gun Trigger"
 #define BLYNK_AUTH_TOKEN  "5dY6oh0BlhF6Q3s_A-WFy40wHrRq7RNO"
 #define BLYNK_PRINT Serial
+#define LEFT_BTN_PIN 4
+#define RIGHT_BTN_PIN 5
+#define LOWER_BOUND -500
+#define UPPER_BOUND 500
 
 #include <SPI.h>
+#include <Servo.h>
+#include <Stepper.h>
 #include <WiFi101.h>
 #include <BlynkSimpleWiFiShield101.h>
 #include <Adafruit_SleepyDog.h>  // https://github.com/adafruit/Adafruit_SleepyDog/blob/master/examples/BasicUsage/BasicUsage.ino
+
+const int stepsPerRevolution = 2000;
+Stepper myStepper = Stepper(stepsPerRevolution, 12, 10, 11, 9);
+
+volatile int steps = 0;
+int pos = 0;
+
+Servo myServo;
+int firePos = 0;
 
 char auth[] = BLYNK_AUTH_TOKEN;
 char ssid[] = "Brown-Guest";
@@ -51,25 +66,35 @@ void setup()
   timer.setInterval(1000L, myTimerEvent);
 
   int countdownMS = Watchdog.enable(1000);  // enable watchdog with specified number of milliseconds before reset
+
+  pinMode(LEFT_BTN_PIN, INPUT);
+
+  attachInterrupt(digitalPinToInterrupt(LEFT_BTN_PIN), rotateISR, CHANGE);
+
+  attachInterrupt(digitalPinToInterrupt(RIGHT_BTN_PIN), rotateISR, CHANGE);
+
+  myStepper.setSpeed(15);
+
+  myServo.attach(6);
 }
 
 void loop()
 {
   // Blynk recommends avoiding the delay() function here
   // TODO: connect this code with the rest of our implementation!
-
-  // INSTRUCTIONS TO USE
-  // Upload this code to arduino and check the serial monitor to ensure it connects to Blynk
-  // Should see a message saying Blynk is connected after the Arduino connects to Brown-Guest WiFi
-  // On the Blynk app (Ray's account), you'll see that the Arduino is online and you can press buttons; uptime should be shown
-  // When you press the button, check the serial monitor to ensure it registered the button press
-
   Blynk.run();
   timer.run();
   if (detect_rise()){
     Serial.println("Button pressed!");
   }
-  Watchdog.reset();  // reset the watchdog
+
+  // Watchdog.reset();  // reset the watchdog
+
+  if (pos <= LOWER_BOUND && steps < 0) return;
+  if (pos >= UPPER_BOUND && steps > 0) return;
+  
+  myStepper.step(steps);
+  pos += steps;
 }
 
 // returns if the button was pressed or not by detecting rising edge
@@ -84,5 +109,41 @@ bool detect_rise()
   }
 }
 
+void rotateISR() {
+  if (digitalRead(LEFT_BTN_PIN) == HIGH) {
+    steps = 1;
+  } else if (digitalRead(RIGHT_BTN_PIN) == HIGH) {
+    steps = -1;
+  } else {
+    steps = 0;
+  }
+}
+
+void reset() {
+  if (pos < 0) {
+    while (pos < 0) {
+      myStepper.step(1);
+      pos++;
+    }
+  } else {
+    while (pos > 0) {
+      myStepper.step(-1);
+      pos--;
+    }
+  }
+}
+
+void fire() {
+  for (firePos = 0; firePos <= 180; firePos += 1) {
+    myServo.write(firePos);
+    delay(15);
+  }
+}
 
 
+void unfire() {
+  for (firePos = 180; firePos >= 0; firePos -= 1) {
+    myServo.write(firePos);
+    delay(15);
+  }
+}
