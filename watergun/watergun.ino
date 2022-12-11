@@ -21,6 +21,8 @@ Stepper myStepper = Stepper(stepsPerRevolution, 12, 10, 11, 9);
 volatile int steps = 0;
 int pos = 0;
 
+int servoRotation = 50;
+
 Servo myServo;
 int firePos = 0;
 
@@ -152,13 +154,13 @@ void reset() {
 // Fires the gun by pulling the servo motor back
 void fire() {
   int countdownMS = Watchdog.enable(50);  // enables quick watchdog to ensure pulling mechanism works
-  for (firePos = 0; firePos <= 180; firePos += 1) {
+  for (firePos = 0; firePos <= servoRotation; firePos += 1) {
     myServo.write(firePos);
     delay(15);
     Watchdog.reset();
   }
   Watchdog.disable();
-  Watchdog.enable(2000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
+  Watchdog.enable(3000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
 }
 
 // Resets the gun to unfire more by pushing the servo motor forward
@@ -166,7 +168,7 @@ void unfire() {
   Watchdog.reset();  // pets the longer watchdog that was enabled upon firing the gun
   Watchdog.disable();
   int countdownMS = Watchdog.enable(50); 
-  for (firePos = 180; firePos >= 0; firePos -= 1) {
+  for (firePos = servoRotation; firePos >= 0; firePos -= 1) {
     myServo.write(firePos);
     delay(15);
     Watchdog.reset();
