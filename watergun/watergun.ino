@@ -35,8 +35,9 @@ BlynkTimer timer;
 int value = -1;
 int prevval = -1;  // for tracking a "rising edge" of virtual button push
 
-int cur_time = millis();
 int last_action_time = millis();
+
+int STATE = 0;  // 0 is idle, 1 is rotate, 2 is reset
 
 // This function is called every time the Virtual Pin 0 state changes; VP0 connected to our shoot button!
 BLYNK_WRITE(V0) {
@@ -75,29 +76,32 @@ void setup()
   myStepper.setSpeed(15);
   myServo.attach(6);
   unfire();
+  STATE = 0;
 }
 
 void loop()
 {
-  Blynk.run();
-  timer.run();
+  updateFSM(STATE, millis(), steps, last_action_time, pos);
+}
 
-  // TODO: add reset if we haven't pressed a button or sent a shoot command in last 30 seconds! (use millis for this)
-
-  bool risen = detect_rise();
-
-  if (pos <= LOWER_BOUND && steps < 0) return;
-  if (pos >= UPPER_BOUND && steps > 0) return;
-  
-  myStepper.step(steps);
-  pos += steps;
-
-  cur_time = millis();
-
-  if (cur_time - last_action_time > 30000){
+void updateFSM(int state, int mils, int steps, int last, int position)
+{
+  if (state <= 1 && mils - last > 30000){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
+    STATE = 2;
     Serial.println("Inactive for 30 seconds, resetting...");
     last_action_time = millis();
     reset();
+  }
+  else if (steps != 0 && !(position <= LOWER_BOUND && steps < 0) && !(position >= UPPER_BOUND && steps > 0)){  // state transition into state 1 when our rotate isn't out of bounds and we've received rotate commands from ISR
+    STATE = 1;
+    myStepper.step(steps);
+    pos += steps;
+  }
+  else{  // Idle state (0) if none of the other states are active, when we poll for shooting commands and then activate shooting itself
+    STATE = 0;
+    Blynk.run();
+    timer.run();
+    bool risen = detect_rise();
   }
 }
 
@@ -160,7 +164,7 @@ void fire() {
     Watchdog.reset();
   }
   Watchdog.disable();
-  Watchdog.enable(3000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
+  // Watchdog.enable(3000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
 }
 
 // Resets the gun to unfire more by pushing the servo motor forward
