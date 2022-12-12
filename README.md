@@ -11,11 +11,11 @@ C++ code requires Adafruit Sleepy Dog library and Blynk.
   * Also, site only shows changes locally, not on the entire site when you make a new GET request
 * `watergun`
   * Arduino Project containing all necessary files for running the gun
-  * `blynk_connection.ino`
-    * Methods made for handling connection to Blynk (IoT software) such that we can send/receive values with a iPhone!
-    * Able to receive data for when to shoot the gun, then act on it to actually shoot the gun
   * `watergun.ino`
-    * Contains all methods interfacing between code the the physical world
+    * Methods for handling connection to Blynk (IoT software) such that we can send/receive values with an iPhone!
+    * Able to receive data for when to shoot the gun, then act on it to actually shoot the gun
+    * Contains all methods interfacing between code and the physical world
     * Handles plate rotation
     * Handles physical water gun shooting
-    * Handles resetting the system to original state
+    * Handles resetting the system to original state if inactive for 30 seconds
+    * Watchdog timers to securely pull/unpull the trigger
