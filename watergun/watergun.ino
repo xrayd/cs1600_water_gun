@@ -92,7 +92,7 @@ void loop()
   updateFSM(STATE, millis(), steps, last_action_time, pos, 1);
 }
 
-int updateFSM(int state, int mils, int steps, int last, int position, bool doAction)
+int updateFSM(int state, int mils, int steps, int last, int position, bool doAction)  // last parameter is to distinguish between testing and actually running
 {
   if (state <= 1 && mils - last > 30000 && steps == 0){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
     STATE = 2;
@@ -122,6 +122,7 @@ int updateFSM(int state, int mils, int steps, int last, int position, bool doAct
   }
 }
 
+// used to test inputs/outputs of FSM to ensure correct states
 void testFSM(int state, int mils, int steps, int last, int position, int correctState, String name){
   int testedState = updateFSM(state, mils, steps, last, position, 0);
   if (testedState == correctState){
