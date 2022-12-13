@@ -77,31 +77,58 @@ void setup()
   myServo.attach(6);
   unfire();
   STATE = 0;
+
+  Serial.println("Starting FSM testing...");
+  testFSM(0, 40000, 0, 0, 0, 2, "State 2");  // tests if we reach state 2
+  testFSM(0, 0, 0, 0, 0, 0, "State 0");  // tests if we reach state 0
+  testFSM(0, 20000, 10000, 0, 1, 1, "State 1");  // tests if we reach state 1
+  testFSM(2, 20000, 10000, 0, 50000, 0, "State 0");  // tests fail condition for state 1
+  testFSM(2, 20000, -10000, 0, -50000, 0, "State 0");  // tests fail condition for state 1
+  testFSM(2, 40000, 0, 0, 0, 0, "State 0");  // tests fail condition for state 2
 }
 
 void loop()
 {
-  updateFSM(STATE, millis(), steps, last_action_time, pos);
+  updateFSM(STATE, millis(), steps, last_action_time, pos, 1);
 }
 
-void updateFSM(int state, int mils, int steps, int last, int position)
+int updateFSM(int state, int mils, int steps, int last, int position, bool doAction)
 {
-  if (state <= 1 && mils - last > 30000){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
+  if (state <= 1 && mils - last > 30000 && steps == 0){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
     STATE = 2;
-    Serial.println("Inactive for 30 seconds, resetting...");
-    last_action_time = millis();
-    reset();
+    if (doAction){
+      Serial.println("Inactive for 30 seconds, resetting...");
+      last_action_time = millis();
+      reset();
+    }
+    return STATE;
   }
   else if (steps != 0 && !(position <= LOWER_BOUND && steps < 0) && !(position >= UPPER_BOUND && steps > 0)){  // state transition into state 1 when our rotate isn't out of bounds and we've received rotate commands from ISR
     STATE = 1;
-    myStepper.step(steps);
-    pos += steps;
+    if (doAction){
+      myStepper.step(steps);
+      pos += steps;
+    }
+    return STATE;
   }
   else{  // Idle state (0) if none of the other states are active, when we poll for shooting commands and then activate shooting itself
     STATE = 0;
-    Blynk.run();
-    timer.run();
-    bool risen = detect_rise();
+    if (doAction){
+      Blynk.run();
+      timer.run();
+      bool risen = detect_rise();
+    }
+    return STATE;
+  }
+}
+
+void testFSM(int state, int mils, int steps, int last, int position, int correctState, String name){
+  int testedState = updateFSM(state, mils, steps, last, position, 0);
+  if (testedState == correctState){
+    Serial.println("Test " + name + " passed!");
+  }
+  else{
+    Serial.println("Test " + name + " FAILED.");
   }
 }
 
@@ -164,7 +191,7 @@ void fire() {
     Watchdog.reset();
   }
   Watchdog.disable();
-  // Watchdog.enable(3000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
+  Watchdog.enable(3000);  // enables longer watchdog to ensure we can't be shooting for more than two seconds
 }
 
 // Resets the gun to unfire more by pushing the servo motor forward
