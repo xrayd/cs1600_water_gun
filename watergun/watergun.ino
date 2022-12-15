@@ -89,10 +89,10 @@ void setup()
 
 void loop()
 {
-  updateFSM(STATE, millis(), steps, last_action_time, pos, 1);
+  updateFSM(STATE, millis(), steps, last_action_time, pos, prevval, value, 1);
 }
 
-int updateFSM(int state, int mils, int steps, int last, int position, bool doAction)  // last parameter is to distinguish between testing and actually running
+int updateFSM(int state, int mils, int steps, int last, int position, int pv, int v, bool doAction)  // last parameter is to distinguish between testing and actually running
 {
   if (state <= 1 && mils - last > 30000 && steps == 0){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
     STATE = 2;
@@ -111,12 +111,23 @@ int updateFSM(int state, int mils, int steps, int last, int position, bool doAct
     }
     return STATE;
   }
-  else{  // Idle state (0) if none of the other states are active, when we poll for shooting commands and then activate shooting itself
+  else if (pv == 0 && v == 1){
+    Serial.println("Gun Firing!");
+    fire();
+    prevval = -1;  // since polling time of loop is larger than WiFi polling time, we don't want this to return True a bunch of times
+    last_action_time = millis();
+    return 1;
+  } else if (pv == 1 && v == 0) {
+    Serial.println("Gun Stopping...");
+    unfire();
+    prevval = -1;
+    last_action_time = millis();
+    return 0;
+  } else{  // Idle state (0) if none of the other states are active, when we poll for shooting commands and then activate shooting itself
     STATE = 0;
     if (doAction){
       Blynk.run();
       timer.run();
-      bool risen = detect_rise();
     }
     return STATE;
   }
@@ -130,26 +141,6 @@ void testFSM(int state, int mils, int steps, int last, int position, int correct
   }
   else{
     Serial.println("Test " + name + " FAILED.");
-  }
-}
-
-// returns if the button was pressed or not by detecting rising edge
-bool detect_rise()
-{
-  if (prevval == 0 && value == 1){
-    Serial.println("Gun Firing!");
-    fire();
-    prevval = -1;  // since polling time of loop is larger than WiFi polling time, we don't want this to return True a bunch of times
-    last_action_time = millis();
-    return 1;
-  } else if (prevval == 1 && value == 0) {
-    Serial.println("Gun Stopping...");
-    unfire();
-    prevval = -1;
-    last_action_time = millis();
-    return 0;
-  } else{
-    return 0;
   }
 }
 
