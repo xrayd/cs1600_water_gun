@@ -98,7 +98,7 @@ void loop()
 
 int updateFSM(int state, int mils, int steps, int last, int position, int pv, int v, bool doAction)  // last parameter is to distinguish between testing and actually running
 {
-  if (state <= 1 && mils - last > 30000 && steps == 0){  // state transition from any other state into state 1, or a reset, occurs when no action is taken for 3 seconds
+  if (state <= 1 && mils - last > 30000 && steps == 0){  // state transition from any other state into state 2, or a reset, occurs when no action is taken for 3 seconds
     STATE = 2;
     if (doAction){
       Serial.println("Inactive for 30 seconds, resetting...");
